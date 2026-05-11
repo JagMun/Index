@@ -1,0 +1,41 @@
+name: Rightmove Scraper
+
+on:
+  workflow_dispatch:
+    inputs:
+      location:
+        description: 'Rightmove location ID (leave blank for Yorkshire)'
+        required: false
+        default: 'REGION%5E61227'
+
+permissions:
+  contents: write
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run scraper
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python rightmove_scraper.py "${{ github.event.inputs.location }}"
+
+      - name: Save results to repo
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add rightmove_results.csv
+          git diff --staged --quiet || git commit -m "Scraper results $(date +'%Y-%m-%d %H:%M')"
+          git push
