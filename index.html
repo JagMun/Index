@@ -1,30 +1,259 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title>Jag is cool</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QALY Cost Calculator</title>
     <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
       body {
         background: linear-gradient(135deg, #b6d4ff, #6fa8ff);
         font-family: "Segoe UI", sans-serif;
+        min-height: 100vh;
         display: flex;
         justify-content: center;
-        align-items: center;
-        height: 100vh;
-        margin: 0;
+        align-items: flex-start;
+        padding: 2rem 1rem;
       }
-      h1 {
-        color: white;
-        font-size: 5rem;
-        text-shadow: 2px 4px 12px rgba(0, 0, 0, 0.25);
-        background: rgba(255, 255, 255, 0.2);
-        padding: 2rem 4rem;
+
+      .card {
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.6);
         border-radius: 20px;
-        backdrop-filter: blur(8px);
-        border: 2px solid rgba(255, 255, 255, 0.4);
+        padding: 2.5rem 3rem;
+        width: 100%;
+        max-width: 520px;
+        box-shadow: 0 8px 32px rgba(0, 80, 200, 0.15);
       }
+
+      h1 {
+        font-size: 1.6rem;
+        color: #1a3a6b;
+        margin-bottom: 0.35rem;
+      }
+
+      .subtitle {
+        font-size: 0.9rem;
+        color: #5a7aa8;
+        margin-bottom: 2rem;
+      }
+
+      .field {
+        margin-bottom: 1.25rem;
+      }
+
+      label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #2c4a7c;
+        margin-bottom: 0.4rem;
+      }
+
+      .hint {
+        font-size: 0.75rem;
+        font-weight: 400;
+        color: #7a9acb;
+        margin-left: 0.4rem;
+      }
+
+      input[type="number"] {
+        width: 100%;
+        padding: 0.65rem 0.9rem;
+        border: 1.5px solid #b8d0f0;
+        border-radius: 10px;
+        font-size: 1rem;
+        color: #1a3a6b;
+        background: #f4f8ff;
+        transition: border-color 0.2s;
+        outline: none;
+      }
+
+      input[type="number"]:focus {
+        border-color: #4a90e2;
+        background: #fff;
+      }
+
+      .currency-wrap {
+        position: relative;
+      }
+
+      .currency-wrap span {
+        position: absolute;
+        left: 0.9rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #7a9acb;
+        font-size: 1rem;
+        pointer-events: none;
+      }
+
+      .currency-wrap input {
+        padding-left: 1.9rem;
+      }
+
+      button {
+        width: 100%;
+        padding: 0.8rem;
+        background: linear-gradient(135deg, #4a90e2, #1a5bbf);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 0.5rem;
+        transition: opacity 0.2s, transform 0.1s;
+      }
+
+      button:hover { opacity: 0.9; }
+      button:active { transform: scale(0.98); }
+
+      .results {
+        margin-top: 1.75rem;
+        display: none;
+      }
+
+      .results.visible { display: block; }
+
+      .divider {
+        border: none;
+        border-top: 1.5px solid #d0e4ff;
+        margin-bottom: 1.25rem;
+      }
+
+      .result-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 0.85rem;
+      }
+
+      .result-label {
+        font-size: 0.88rem;
+        color: #4a6a9c;
+      }
+
+      .result-value {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #1a3a6b;
+      }
+
+      .result-value.highlight {
+        font-size: 1.3rem;
+        color: #1a5bbf;
+      }
+
+      .error {
+        margin-top: 1rem;
+        padding: 0.7rem 1rem;
+        background: #fff0f0;
+        border: 1px solid #ffb0b0;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        color: #c0392b;
+        display: none;
+      }
+
+      .error.visible { display: block; }
     </style>
   </head>
   <body>
-    <h1>Jag is cool</h1>
+    <div class="card">
+      <h1>QALY Cost Calculator</h1>
+      <p class="subtitle">EQ-5D-based cost per quality-adjusted life year</p>
+
+      <div class="field">
+        <label>EQ Score Before Intervention <span class="hint">0 – 1</span></label>
+        <input type="number" id="eqBefore" min="0" max="1" step="0.001" placeholder="e.g. 0.55" />
+      </div>
+
+      <div class="field">
+        <label>EQ Score After Intervention <span class="hint">0 – 1</span></label>
+        <input type="number" id="eqAfter" min="0" max="1" step="0.001" placeholder="e.g. 0.72" />
+      </div>
+
+      <div class="field">
+        <label>Duration of Effect <span class="hint">years</span></label>
+        <input type="number" id="duration" min="0" step="0.1" placeholder="e.g. 1" />
+      </div>
+
+      <div class="field">
+        <label>Cost of Intervention <span class="hint">per person</span></label>
+        <div class="currency-wrap">
+          <span>£</span>
+          <input type="number" id="cost" min="0" step="0.01" placeholder="e.g. 1200" />
+        </div>
+      </div>
+
+      <button onclick="calculate()">Calculate</button>
+
+      <div class="error" id="error"></div>
+
+      <div class="results" id="results">
+        <hr class="divider" />
+        <div class="result-row">
+          <span class="result-label">QALY gain per person</span>
+          <span class="result-value" id="qalyGain"></span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">Cost per QALY</span>
+          <span class="result-value highlight" id="costPerQaly"></span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function calculate() {
+        const eqBefore = parseFloat(document.getElementById("eqBefore").value);
+        const eqAfter  = parseFloat(document.getElementById("eqAfter").value);
+        const duration = parseFloat(document.getElementById("duration").value);
+        const cost     = parseFloat(document.getElementById("cost").value);
+
+        const errorEl  = document.getElementById("error");
+        const resultsEl = document.getElementById("results");
+
+        errorEl.className = "error";
+        resultsEl.className = "results";
+
+        if ([eqBefore, eqAfter, duration, cost].some(isNaN)) {
+          errorEl.textContent = "Please fill in all four fields.";
+          errorEl.className = "error visible";
+          return;
+        }
+        if (eqBefore < 0 || eqBefore > 1 || eqAfter < 0 || eqAfter > 1) {
+          errorEl.textContent = "EQ scores must be between 0 and 1.";
+          errorEl.className = "error visible";
+          return;
+        }
+        if (duration <= 0 || cost < 0) {
+          errorEl.textContent = "Duration must be greater than 0 and cost cannot be negative.";
+          errorEl.className = "error visible";
+          return;
+        }
+
+        const qalyGain = (eqAfter - eqBefore) * duration;
+
+        if (qalyGain <= 0) {
+          errorEl.textContent = "No QALY gain detected — the after score must be higher than the before score for a positive result.";
+          errorEl.className = "error visible";
+          return;
+        }
+
+        const costPerQaly = cost / qalyGain;
+
+        document.getElementById("qalyGain").textContent = qalyGain.toFixed(4) + " QALYs";
+        document.getElementById("costPerQaly").textContent = "£" + costPerQaly.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        resultsEl.className = "results visible";
+      }
+
+      document.querySelectorAll("input").forEach(input => {
+        input.addEventListener("keydown", e => { if (e.key === "Enter") calculate(); });
+      });
+    </script>
   </body>
 </html>
